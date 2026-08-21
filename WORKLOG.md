@@ -18,3 +18,10 @@
 - Each response includes `usage` data showing input and output tokens.
 - Output costs 5x more than input; `max_tokens` is a cost lever.
 - Actual cost of a simple call using Haiku: $0.0004 USD.
+
+## Day 2 — Aug 21, 2026
+
+- Modeled locations as a level of their own: SUA groups employees by work
+  location, which enables two-level total reconciliation (employees → location
+  subtotal → grand total). Dropped CURP and INFONAVIT: not needed for the
+  compliance check and fewer fields means less room for hallucination.
