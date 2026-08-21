@@ -1,35 +1,35 @@
-// Carga las variables del archivo .env hacia process.env
+// Loads variables from .env into process.env
 import 'dotenv/config';
 
-// Importa el cliente oficial de Anthropic
+// Official Anthropic SDK client
 import Anthropic from '@anthropic-ai/sdk';
 
-// El cliente busca ANTHROPIC_API_KEY en el entorno automáticamente.
-// Por eso la llave nunca aparece en el código.
+// The client reads ANTHROPIC_API_KEY from the environment automatically,
+// which is why the key never appears in source code.
 const client = new Anthropic();
 
-console.log('Enviando pregunta a Claude...\n');
+console.log('Sending prompt to Claude...\n');
 
-const respuesta = await client.messages.create({
-  model: 'claude-haiku-4-5-20251001',  // el más barato y rápido
-  max_tokens: 300,                      // tope de la respuesta = control de costo
+const response = await client.messages.create({
+  model: 'claude-haiku-4-5-20251001',  // cheapest and fastest tier
+  max_tokens: 300,                      // hard cap on output = cost control
   messages: [
     {
       role: 'user',
-      content: 'Explícame en dos frases qué es un token en un modelo de lenguaje.',
+      content: 'Explain in two sentences what a token is in a language model.',
     },
   ],
 });
 
-// content es un ARREGLO de bloques, no un string
-console.log(respuesta.content[0].text);
+// content is an ARRAY of blocks, not a string
+console.log(response.content[0].text);
 
-console.log('\n--- consumo ---');
-console.log('Tokens de entrada:', respuesta.usage.input_tokens);
-console.log('Tokens de salida: ', respuesta.usage.output_tokens);
+console.log('\n--- usage ---');
+console.log('Input tokens: ', response.usage.input_tokens);
+console.log('Output tokens:', response.usage.output_tokens);
 
-const costo =
-  (respuesta.usage.input_tokens / 1_000_000) * 1 +
-  (respuesta.usage.output_tokens / 1_000_000) * 5;
+const cost =
+  (response.usage.input_tokens / 1_000_000) * 1 +
+  (response.usage.output_tokens / 1_000_000) * 5;
 
-console.log('Costo aproximado: $' + costo.toFixed(6), 'USD');
+console.log('Approx. cost: $' + cost.toFixed(6), 'USD');
