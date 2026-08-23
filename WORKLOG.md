@@ -25,3 +25,18 @@
   location, which enables two-level total reconciliation (employees → location
   subtotal → grand total). Dropped CURP and INFONAVIT: not needed for the
   compliance check and fewer fields means less room for hallucination.
+
+  ## Day 3 — Aug 22
+
+**Done**
+- Tool use extraction working end to end. Deterministic with temperature 0.
+- Three fixtures: clean, inconsistent totals, malformed layout.
+
+**Finding**
+- On the malformed fixture the model correctly reconstructed a split row,
+  separated two run-together amounts, and discarded a stray NSS inside the
+  subtotal line — but reported nothing in missingFields. Silent inference is
+  the core risk of LLM extraction: a wrong inference looks identical to a
+  right one. A positional parser fails loudly; the model fails quietly.
+  Mitigation: add an `anomalies` field AND deterministic validation. Neither
+  is sufficient alone.
