@@ -11,7 +11,9 @@ const SYSTEM_PROMPT = `You extract structured data from Mexican IMSS/SUA payroll
 Rules:
 - Transcribe values exactly as printed. Do not normalize, round or reformat.
 - Stated totals and subtotals must be copied from the document, never recalculated.
-- If a required field is absent or unreadable, list its name in missingFields and do not invent a value.`;
+- If a required field is absent or unreadable, list its name in missingFields and do not invent a value.
+
+- Report every inference in anomalies. Reconstructing a split row, separating run-together numbers, or ignoring a value in an unexpected position all count as inference, even when you are confident.`;
 
 export async function extractPayroll(documentText: string): Promise<PayrollDocument> {
   const response = await client.messages.create({
@@ -39,6 +41,25 @@ export async function extractPayroll(documentText: string): Promise<PayrollDocum
 }
 
 // Run directly for a quick manual check
-const text = readFileSync('fixtures/sample-03.txt', 'utf-8');
+import { validate } from './validate.js';
+
+const fixture = process.argv[2] ?? 'fixtures/sample-01.txt';
+const text = readFileSync(fixture, 'utf-8');
+
 const result = await extractPayroll(text);
 console.log(JSON.stringify(result, null, 2));
+
+const validation = validate(result);
+
+console.log('\n--- validation ---');
+console.log('Passed:', validation.passed);
+
+for (const finding of validation.findings) {
+  console.log(`[${finding.severity.toUpperCase()}] ${finding.code} @ ${finding.path}`);
+  console.log(`  ${finding.message}`);
+}
+
+if (validation.findings.length === 0) {
+  console.log('No findings.');
+}
+

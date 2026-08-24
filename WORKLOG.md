@@ -40,3 +40,22 @@
   right one. A positional parser fails loudly; the model fails quietly.
   Mitigation: add an `anomalies` field AND deterministic validation. Neither
   is sufficient alone.
+
+## Day 4 — Aug 23
+
+**Done**
+- Deterministic validation engine: two-level reconciliation, format rules
+  (RFC, NSS, period), sanity checks, duplicate NSS detection.
+- Added `anomalies` to the schema so the model declares what it inferred.
+  Low confidence escalates to error; high/medium surface as warnings.
+
+**Findings**
+- Validation catches internal inconsistency only. A faithful-looking wrong
+  extraction passes silently — structural blind spot, since the source
+  document is never part of the comparison.
+- The `anomalies` field closed part of that gap: on the malformed fixture the
+  model now reports the split row and the stray NSS in the subtotal line. But
+  it did NOT report two run-together amounts it also had to separate. The
+  model reports what it judges anomalous; its threshold is not mine.
+- Vague schema descriptions do not work. "Report anomalies" would not have
+  produced this; the enumerated examples did.

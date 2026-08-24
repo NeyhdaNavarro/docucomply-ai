@@ -88,6 +88,28 @@ export const payrollTool = {
         description:
           'Names of any required fields that are absent or unreadable. Report them here instead of guessing a value.',
       },
+            anomalies: {
+        type: 'array',
+        description:
+          'Every place where you had to infer, reconstruct or disambiguate rather than read a value directly. Report split rows, run-together numbers, values in unexpected positions, unclear characters, or anything you resolved by reasoning about context. An empty array means every value was read verbatim.',
+        items: {
+          type: 'object',
+          properties: {
+            location: {
+              type: 'string',
+              description: 'Where in the document, e.g. "employee row 2, PLANTA IRAPUATO".',
+            },
+            issue: { type: 'string', description: 'What was ambiguous or malformed.' },
+            resolution: { type: 'string', description: 'How you resolved it.' },
+            confidence: {
+              type: 'string',
+              enum: ['high', 'medium', 'low'],
+              description: 'Your confidence in the resolution.',
+            },
+          },
+          required: ['location', 'issue', 'resolution', 'confidence'],
+        },
+      },
     },
     required: [
       'employerTaxId',
@@ -96,6 +118,7 @@ export const payrollTool = {
       'locations',
       'statedTotal',
       'missingFields',
+      'anomalies',
     ],
   },
 };
