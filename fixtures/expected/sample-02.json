@@ -1,0 +1,32 @@
+{
+  "employerTaxId": "TBA010923KL7",
+  "employerName": "TRANSPORTES DEL BAJIO SA DE CV",
+  "period": "2026-07",
+  "locations": [
+    {
+      "registrationNumber": "C7798654301",
+      "locationName": "PLANTA IRAPUATO",
+      "employees": [
+        {
+          "socialSecurityNumber": "09876543210",
+          "fullName": "VELAZQUEZ ROJAS MARTIN",
+          "dailyBaseSalary": 410.00,
+          "daysWorked": 30,
+          "employerContribution": 2600.00,
+          "employeeContribution": 890.00
+        },
+        {
+          "socialSecurityNumber": "11223344556",
+          "fullName": "SANTOS AGUILAR CLAUDIA",
+          "dailyBaseSalary": 380.50,
+          "daysWorked": 30,
+          "employerContribution": 2415.75,
+          "employeeContribution": 830.10
+        }
+      ],
+      "statedSubtotal": 6000.00
+    }
+  ],
+  "statedTotal": 6735.85,
+  "missingFields": []
+}

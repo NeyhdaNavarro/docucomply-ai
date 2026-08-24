@@ -1,0 +1,40 @@
+{
+  "employerTaxId": "DPE050712MN4",
+  "employerName": "DISTRIBUIDORA PENINSULAR SA DE CV",
+  "period": "2026-07",
+  "locations": [
+    {
+      "registrationNumber": "D3345678902",
+      "locationName": "CEDIS MERIDA",
+      "employees": [
+        {
+          "socialSecurityNumber": "04455667788",
+          "fullName": "AGUILAR NAVARRO SOFIA",
+          "dailyBaseSalary": 395.60,
+          "daysWorked": 30,
+          "employerContribution": 2510.20,
+          "employeeContribution": 860.75
+        },
+        {
+          "socialSecurityNumber": "55667788990",
+          "fullName": "CANTU RIVERA JORGE",
+          "dailyBaseSalary": 442.10,
+          "daysWorked": 30,
+          "employerContribution": 2805.30,
+          "employeeContribution": 961.80
+        },
+        {
+          "socialSecurityNumber": "66778899001",
+          "fullName": "ESPINOZA LARA VERONICA",
+          "dailyBaseSalary": 512.00,
+          "daysWorked": 30,
+          "employerContribution": 3248.90,
+          "employeeContribution": 1114.55
+        }
+      ],
+      "statedSubtotal": 11501.50
+    }
+  ],
+  "statedTotal": 11501.50,
+  "missingFields": []
+}

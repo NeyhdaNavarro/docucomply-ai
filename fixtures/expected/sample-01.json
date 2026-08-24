@@ -1,0 +1,63 @@
+{
+  "employerTaxId": "LNO980415AB2",
+  "employerName": "LOGISTICA DEL NORTE SA DE CV",
+  "period": "2026-07",
+  "locations": [
+    {
+      "registrationNumber": "B5512345108",
+      "locationName": "PLANTA SALTILLO",
+      "employees": [
+        {
+          "socialSecurityNumber": "12345678901",
+          "fullName": "RAMIREZ TORRES JUAN CARLOS",
+          "dailyBaseSalary": 450.20,
+          "daysWorked": 30,
+          "employerContribution": 2850.40,
+          "employeeContribution": 980.15
+        },
+        {
+          "socialSecurityNumber": "23456789012",
+          "fullName": "LOPEZ MENDEZ MARIA ELENA",
+          "dailyBaseSalary": 512.75,
+          "daysWorked": 30,
+          "employerContribution": 3245.80,
+          "employeeContribution": 1115.20
+        },
+        {
+          "socialSecurityNumber": "34567890123",
+          "fullName": "GARZA SILVA ROBERTO",
+          "dailyBaseSalary": 389.00,
+          "daysWorked": 28,
+          "employerContribution": 2310.55,
+          "employeeContribution": 794.30
+        }
+      ],
+      "statedSubtotal": 11296.40
+    },
+    {
+      "registrationNumber": "B5512345209",
+      "locationName": "CEDIS MONTERREY",
+      "employees": [
+        {
+          "socialSecurityNumber": "45678901234",
+          "fullName": "HERNANDEZ CRUZ ANA PATRICIA",
+          "dailyBaseSalary": 605.50,
+          "daysWorked": 30,
+          "employerContribution": 3830.25,
+          "employeeContribution": 1316.90
+        },
+        {
+          "socialSecurityNumber": "56789012345",
+          "fullName": "MORALES VEGA LUIS ALBERTO",
+          "dailyBaseSalary": 428.90,
+          "daysWorked": 15,
+          "employerContribution": 1356.70,
+          "employeeContribution": 466.35
+        }
+      ],
+      "statedSubtotal": 6970.20
+    }
+  ],
+  "statedTotal": 18266.60,
+  "missingFields": []
+}

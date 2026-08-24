@@ -59,3 +59,16 @@
   model reports what it judges anomalous; its threshold is not mine.
 - Vague schema descriptions do not work. "Report anomalies" would not have
   produced this; the enumerated examples did.
+
+  ## Day 5 — Aug 25
+
+**Done**
+- Ground truth for the three fixtures, hand-written from the source documents.
+
+**Findings**
+- Found a corrupted fixture: sample-01 still had the 10-digit NSS from
+  yesterday's mutation test. Ground truth caught it before measurement did.
+- Ground truth is itself fallible. When accuracy drops, the first question is
+  "which of the two is wrong?", not "what did the model get wrong?".
+- It cannot be model-generated: using the model to verify the model would
+  always score 100%. Human reading is the only valid source.
