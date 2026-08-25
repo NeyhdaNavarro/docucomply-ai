@@ -38,6 +38,18 @@ function sumLocation(employees: PayrollDocument['locations'][number]['employees'
  */
 export function validate(doc: PayrollDocument): ValidationResult {
   
+  if (!Array.isArray(doc.locations)) {
+    return {
+      findings: [{
+        code: 'MALFORMED_EXTRACTION',
+        severity: 'error',
+        message: 'Model returned a schema-violating response: locations is not an array.',
+        path: 'locations',
+      }],
+      passed: false,
+    };
+  }
+
   const findings: ValidationFinding[] = [];
 
   // --- Document-level format rules ---

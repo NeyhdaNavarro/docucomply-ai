@@ -60,7 +60,7 @@
 - Vague schema descriptions do not work. "Report anomalies" would not have
   produced this; the enumerated examples did.
 
-  ## Day 5 — Aug 25
+  ## Day 5 — Aug 24
 
 **Done**
 - Ground truth for the three fixtures, hand-written from the source documents.
@@ -72,3 +72,51 @@
   "which of the two is wrong?", not "what did the model get wrong?".
 - It cannot be model-generated: using the model to verify the model would
   always score 100%. Human reading is the only valid source.
+
+  ## Day 6 — Aug 25
+
+**Done**
+- Evaluation harness: flatten → compare → report. Field-level accuracy with
+  path-addressed mismatches, tolerance-based numeric comparison, documented
+  text normalization, and detection of invented rows.
+- Disk cache for extractions. Separated library from entry point after
+  discovering top-level code in an imported module fires on every import.
+
+**Result: 84/84 fields, 100% across 3 fixtures.**
+
+**Findings**
+- First run showed 98.8%. The single failure was MY fixture, not the model:
+  a corrupted NSS left over from a mutation test. Ground truth is fallible;
+  the first question on a mismatch is which side is wrong.
+- On sample-02 the model produced a confidently-worded but self-contradictory
+  explanation in `anomalies` (claimed a mismatch and disproved it in the same
+  sentence). Deterministic validation gave the correct answer in two lines.
+  Model explanations are plausible text, not verified reasoning.
+- Next: narrow `anomalies` to reading problems only. Arithmetic belongs to
+  the validator.
+
+  ## Day 7 — Aug 26
+
+**Done**
+- PDF generation from fixtures. Text-layer extraction (route A, pdfjs).
+  Image rendering + vision extraction (route B).
+- Added MALFORMED_EXTRACTION guard: it caught a schema-violating response
+  on the first vision run.
+
+**Findings — the important one**
+- Route A (text): 100% field accuracy, deterministic, ~1.7k input tokens.
+- Route B (vision, Haiku): catastrophic. Visual character confusions
+  (D→O, 6→8, 6→G), transposed contribution columns, a hallucinated employee
+  built from a split row's amounts, and schema violations (`locations`
+  returned as a serialized string). Two runs at temperature 0 produced
+  DIFFERENT output — determinism does not survive the vision path.
+- My hypothesis was that vision would win by preserving layout. The data
+  says otherwise. Route A wins decisively when a text layer exists.
+- Most alarming: stated subtotal and grand total came out correct both times,
+  so reconciliation validation would have PASSED on fabricated employee data.
+  This is the structural blind spot, demonstrated rather than argued.
+
+**Open**
+- `scale: 4` produced identical input token count as `scale: 2` — the option
+  did not take effect. Re-test resolution properly.
+- Test Sonnet on the vision path; Haiku may simply be the wrong tier for images.

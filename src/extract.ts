@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync } from 'node:fs';
+//import { readFileSync } from 'node:fs';
 import { payrollTool } from './schema.js';
 import type { PayrollDocument } from './types.js';
 
@@ -40,26 +40,48 @@ export async function extractPayroll(documentText: string): Promise<PayrollDocum
   return toolUse.input as PayrollDocument;
 }
 
-// Run directly for a quick manual check
-import { validate } from './validate.js';
+/**
+ * Same schema, same rules, image input instead of text.
+ * Kept as a separate function so both routes can be measured independently.
+ */
+export async function extractPayrollFromImages(
+  images: string[],
+): Promise<PayrollDocument> {
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 4000,
+    temperature: 0,
+    system: SYSTEM_PROMPT,
+    tools: [payrollTool],
+    tool_choice: { type: 'tool', name: 'record_payroll_document' },
+    messages: [
+      {
+        role: 'user',
+        content: [
+          ...images.map((data) => ({
+            type: 'image' as const,
+            source: { type: 'base64' as const, media_type: 'image/png' as const, data },
+          })),
+          {
+            type: 'text' as const,
+            text: 'Extract the payroll document shown in these page images.',
+          },
+        ],
+      },
+    ],
+  });
 
-const fixture = process.argv[2] ?? 'fixtures/sample-01.txt';
-const text = readFileSync(fixture, 'utf-8');
+  const toolUse = response.content.find((block) => block.type === 'tool_use');
 
-const result = await extractPayroll(text);
-console.log(JSON.stringify(result, null, 2));
+  if (!toolUse || toolUse.type !== 'tool_use') {
+    throw new Error('Model did not return a tool_use block');
+  }
 
-const validation = validate(result);
+  console.log('--- usage (vision) ---');
+  console.log('Input tokens: ', response.usage.input_tokens);
+  console.log('Output tokens:', response.usage.output_tokens);
 
-console.log('\n--- validation ---');
-console.log('Passed:', validation.passed);
-
-for (const finding of validation.findings) {
-  console.log(`[${finding.severity.toUpperCase()}] ${finding.code} @ ${finding.path}`);
-  console.log(`  ${finding.message}`);
+  return toolUse.input as PayrollDocument;
 }
 
-if (validation.findings.length === 0) {
-  console.log('No findings.');
-}
 
