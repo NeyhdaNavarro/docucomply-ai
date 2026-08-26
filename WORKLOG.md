@@ -120,3 +120,44 @@
 - `scale: 4` produced identical input token count as `scale: 2` — the option
   did not take effect. Re-test resolution properly.
 - Test Sonnet on the vision path; Haiku may simply be the wrong tier for images.
+
+## Day 8 — Aug 28
+
+**Done**
+- Made `renderPdfToImages` take `scale` as a parameter instead of hardcoding
+  it, and re-ran route B on Sonnet 5 instead of Haiku.
+
+**Findings — the important one**
+- Day 7's "vision is broken" conclusion was wrong in its framing: the failure
+  is model-tier specific, not inherent to the route. Sonnet 5 extracts the
+  same document at 100% field accuracy over vision. Haiku 4.5 is simply the
+  wrong tier for reading an image of a payroll table.
+
+  | Route                    | Accuracy | Determinism |
+  |---------------------------|----------|-------------------------------|
+  | A — text (Haiku 4.5)      | 100%     | identical output, 2 runs at temp 0 |
+  | B — vision (Haiku 4.5)    | catastrophic (misreads, hallucinated employee, schema violation) | different output, 2 runs at temp 0 |
+  | B — vision (Sonnet 5)     | 100%     | structured fields byte-identical, 3 runs (temp 0 unavailable — see below); `anomalies` prose varied every run |
+
+- Separately: resolution was never the lever. `scale: 2` and `scale: 4`
+  produce identical input token counts (3,044 both times) despite the
+  rendered PNG genuinely differing per scale — 52 KB at scale 2 vs. 120 KB
+  at scale 4, confirmed by logging page size. So local rendering is working
+  correctly; the downsampling happens API-side, after upload. Raising render
+  scale burns local render time and bandwidth for nothing. Dropped the
+  scale-tuning idea entirely.
+
+- `temperature: 0` is also absent from the Sonnet 5 vision call, but not by
+  choice: Sonnet 5 rejects the parameter outright with a 400 error. Removing
+  it was mandatory, not an oversight left over from debugging.
+- Ran the same Sonnet 5 vision extraction three times to settle Day 7's
+  non-determinism question on this tier. All 25 structured fields were
+  byte-identical across all three runs. The free-text `anomalies`
+  descriptions differed every time (output tokens: 796 / 808 / 811).
+  Design rule: never key, compare, or diff on model-generated prose — only
+  on schema fields. This is exactly why `anomalies` is excluded from
+  flatten/compare (see src/flatten.ts).
+
+**Open**
+- Route A remains the default recommendation: same accuracy, far fewer
+  tokens, no per-tier model dependency to re-validate later.
