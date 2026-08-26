@@ -48,9 +48,8 @@ export async function extractPayrollFromImages(
   images: string[],
 ): Promise<PayrollDocument> {
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-5',
     max_tokens: 4000,
-    temperature: 0,
     system: SYSTEM_PROMPT,
     tools: [payrollTool],
     tool_choice: { type: 'tool', name: 'record_payroll_document' },

@@ -4,15 +4,14 @@
  * sees columns as columns and an indented continuation row as what it is.
  */
 import { pdf } from 'pdf-to-img';
-
-export async function renderPdfToImages(path: string): Promise<string[]> {
+export async function renderPdfToImages(path: string, scale = 2): Promise<string[]> {
   const pages: string[] = [];
-  // Scale 2 roughly doubles resolution: better small-digit legibility,
-  // at the cost of more image tokens per page.
-  const document = await pdf(path, { scale: 4 });
+  const document = await pdf(path, { scale });
 
   for await (const page of document) {
-    pages.push(Buffer.from(page).toString('base64'));
+    const base64 = Buffer.from(page).toString('base64');
+    console.log(`  page rendered: ${(page.length / 1024).toFixed(0)} KB at scale ${scale}`);
+    pages.push(base64);
   }
 
   return pages;

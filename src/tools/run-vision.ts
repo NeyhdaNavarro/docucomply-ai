@@ -4,9 +4,10 @@ import { extractPayrollFromImages } from '../extract.js';
 import { validate } from '../validate.js';
 
 const path = process.argv[2] ?? 'fixtures/pdf/sample-03.pdf';
+const scale = Number(process.argv[3] ?? 2);
 
-console.log(`Rendering ${path}...`);
-const images = await renderPdfToImages(path);
+console.log(`Rendering ${path} at scale ${scale}...`);
+const images = await renderPdfToImages(path, scale);
 console.log(`${images.length} page(s) rendered\n`);
 
 const result = await extractPayrollFromImages(images);
