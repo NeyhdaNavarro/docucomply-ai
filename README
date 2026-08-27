@@ -1,0 +1,426 @@
+# DocuComply AI
+
+**LLM-based document extraction with deterministic compliance validation.**
+
+DocuComply AI extracts structured data from Mexican IMSS/SUA payroll documents
+using an LLM, then verifies that output with deterministic business rules and
+measures it against human-written ground truth.
+
+> AI extracts. Code verifies. Humans review uncertainty.
+
+---
+
+## Why this project exists
+
+This year I shipped a production system that processes IMSS/SUA documents in
+C#/.NET — text extraction, parsing rules, OCR for scanned files, and
+deterministic validation. Working with those documents taught me exactly where
+that approach strains: layouts drift between employers, rows break across
+lines, and every new edge case becomes another hardcoded rule.
+
+When I started working with LLMs, rather than building a demo from scratch I
+went back to the problem I already knew and built a second implementation of
+it. The goal was to compare both approaches with data: how well a model
+reconstructs a malformed document, where it fails, how far its output can be
+trusted, and which validations remain necessary even with a model in the loop.
+
+The result is not an attempt to replace deterministic rules with a model. It is
+a hybrid architecture — the model provides flexibility in interpreting
+documents, deterministic code verifies whatever must be verifiable — with a
+ground-truth harness so the comparison rests on measurement rather than
+assumption.
+
+---
+
+## The problem
+
+Traditional document parsers fail visibly when layouts change. LLMs behave
+differently: they reconstruct malformed information surprisingly well, but an
+incorrect inference looks just as convincing as a correct one.
+
+For compliance-oriented processing that raises a specific question:
+
+**How do you use the flexibility of a model without blindly trusting its
+output?**
+
+This project answers it with layers that check different things:
+
+- The model interprets documents and produces structured output.
+- Deterministic code validates business rules and internal consistency.
+- Human-created ground truth measures extraction accuracy.
+- An explicit `anomalies` field surfaces model inference instead of hiding it.
+- Extraction routes are measured independently rather than assumed equivalent.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[Payroll Document]
+
+    A --> B[Route A: PDF Text Layer]
+    A --> C[Route B: Page Images]
+
+    B --> D[LLM Structured Extraction]
+    C --> D
+
+    D --> E[Typed Payroll Data]
+    E --> F[Deterministic Validation]
+
+    F --> G{Result}
+    G -->|Valid| H[PASS]
+    G -->|Suspicious| I[WARNING]
+    G -->|Unsafe / Invalid| J[HUMAN REVIEW]
+
+    E --> K[Evaluation Harness]
+    L[Human Ground Truth] --> K
+    K --> M[Field-Level Accuracy]
+```
+
+Extraction, validation and evaluation are deliberately separate concerns,
+because they answer different questions:
+
+| Layer | Question it answers |
+|---|---|
+| Model | What does this document appear to contain? |
+| Validator | Are these extracted values internally consistent? |
+| Evaluation harness | Do these values match human-verified ground truth? |
+
+No single mechanism should answer all three.
+
+---
+
+## Design decisions
+
+### Work locations as a first-class level
+
+The concept came from the original system, where one requirement was to filter
+and separate information by work location. Carrying it into DocuComply made
+clear this was not only a presentation concern: it is how the source document
+is actually structured. Each location holds its own employees and its own
+printed subtotal.
+
+Modeling it as a flat list of employees would have been simpler and would have
+lost the ability to reconcile at two levels — first that employee contributions
+sum to their location's stated subtotal, then that location subtotals sum to
+the document's grand total. The hierarchy both mirrors the real document and
+enables a validation rule that would not otherwise exist.
+
+### Stated totals are transcribed, never recalculated
+
+The schema instructs the model to copy printed totals and subtotals verbatim.
+If the model recalculated them, validation would be comparing one computed sum
+against another computed sum — the document's own claim would disappear from
+the comparison, and inconsistencies in the source would become invisible.
+
+### Schema descriptions are prompt, not documentation
+
+Field descriptions in `schema.ts` are written to steer model behavior
+directly — for example, *"Keep leading zeros. Never reformat."* on the NSS
+field, and *"Copy it, never compute it."* on totals. Vague descriptions
+measurably underperformed enumerated, concrete ones.
+
+### Out of scope: CURP and INFONAVIT credits
+
+Neither is needed for the compliance checks this project performs. Every field
+requested from the model is additional surface for hallucination, so a smaller
+schema is a reliability decision as much as a scope decision.
+
+---
+
+## Evaluation methodology
+
+Ground truth for the current fixtures was transcribed by hand from the source
+documents. It is intentionally **not generated by the model being evaluated** —
+using the same model to produce both an extraction and its expected answer
+would make the evaluation circular and always score 100%.
+
+```text
+Source Document
+      │
+      ▼
+Human Ground Truth ───────────────┐
+                                  │
+Source Document                   │
+      │                           │
+      ▼                           ▼
+LLM Extraction ───────────► Field Comparison
+                                  │
+                                  ▼
+                         Accuracy + Mismatches
+```
+
+Documents are flattened into path-addressable leaf fields:
+
+```text
+locations[0].employees[1].socialSecurityNumber
+locations[0].employees[1].dailyBaseSalary
+locations[0].statedSubtotal
+statedTotal
+```
+
+Comparison rules, stated explicitly because they affect the reported number:
+
+- Text is trimmed and internal whitespace collapsed before comparison.
+- Numeric values use an explicit `0.01` tolerance.
+- Fields present in ground truth but absent from the extraction count as
+  failures; fields extracted but absent from ground truth are reported as
+  invented rows.
+- Model-generated `anomalies` prose is excluded from field accuracy, since it
+  is model judgment rather than an objective property of the source.
+
+---
+
+## Results
+
+Across the current three controlled fixtures, text-route extraction:
+
+| Metric | Result |
+|---|---:|
+| Documents | 3 |
+| Evaluated fields | 84 |
+| Correct fields | 84 |
+| Field-level accuracy | **100%** |
+
+These results apply only to this controlled fixture set and should not be read
+as production accuracy across arbitrary IMSS/SUA documents.
+
+| Fixture | Purpose |
+|---|---|
+| Clean document | Baseline structured extraction |
+| Inconsistent totals | Verify deterministic reconciliation |
+| Malformed layout | Test reconstruction, anomalies, structural edge cases |
+
+---
+
+## Text vs. vision experiment
+
+### Route A — PDF text layer
+
+The text layer is extracted with `pdfjs-dist` and sent to the model as plain
+text. On the current fixtures: 100% field accuracy, repeatable output,
+significantly fewer input tokens, no image rendering, and no dependency on the
+model's vision capability.
+
+The trade-off is that text extraction destroys spatial layout. Column positions
+and row alignment do not survive the conversion.
+
+### Route B — PDF pages as images
+
+Each page is rendered to PNG and sent to a vision-capable model, preserving
+visual structure. Testing showed this route is **highly dependent on model
+tier**.
+
+**Haiku 4.5** on the malformed fixture produced serious failures: character
+confusion, transposed contribution columns, a hallucinated employee
+reconstructed from a split row's amounts, schema-invalid output, and different
+results across repeated runs.
+
+Most importantly, printed subtotal and grand-total values were still extracted
+correctly while employee-level data was wrong. That demonstrates a limitation
+worth stating plainly:
+
+> Internal reconciliation can pass even when the underlying extraction contains
+> fabricated data. Deterministic validation is necessary, but it cannot prove
+> extraction fidelity by itself.
+
+**Sonnet 5** on the same document reached 100% field accuracy. Across three
+identical runs all 25 structured fields were byte-identical, while the
+free-text anomaly descriptions differed each time.
+
+This changed the original conclusion. The experiment does not show that vision
+extraction is inherently unreliable — it shows that vision extraction must be
+evaluated for the specific model tier in use.
+
+### Resolution is not the lever
+
+Rendering the same page at scale 2 and scale 4 produced different local PNG
+sizes (52 KB vs 120 KB) but **identical input token counts** (3,044 both
+times). The additional resolution is normalized downstream, so raising render
+scale bought nothing measurable in this experiment.
+
+---
+
+## What the experiments changed
+
+Several design decisions came from disproved assumptions rather than being
+chosen in advance.
+
+**Deterministic validation is not enough.** A document can be internally
+consistent and still be extracted incorrectly. Correct totals do not prove
+individual rows are correct.
+
+**Ground truth is required.** Validation checks business consistency; ground
+truth checks extraction fidelity. Those are separate responsibilities.
+
+**Model explanations are not verified reasoning.** During testing the model
+produced an anomaly explanation that confidently asserted a numeric mismatch
+while showing numbers that disproved its own claim in the same sentence. The
+deterministic validator returned the correct arithmetic in two lines. Model
+prose is treated as informative, never authoritative.
+
+**Do not compare model-generated prose.** Three identical Sonnet vision runs
+produced identical structured fields with different `anomalies` wording.
+Evaluation therefore operates on schema fields only.
+
+**Treat model changes as system changes.** The same route produced dramatically
+different results across tiers. Swapping a model does not preserve extraction
+behavior.
+
+---
+
+## Reliability strategy
+
+```text
+                ┌─────────────────────┐
+                │   Source Document   │
+                └──────────┬──────────┘
+                           ▼
+                ┌─────────────────────┐
+                │   LLM Extraction    │
+                └──────────┬──────────┘
+                           ▼
+                ┌─────────────────────┐
+                │  Structured Schema  │
+                └──────────┬──────────┘
+              ┌────────────┴────────────┐
+              ▼                         ▼
+    Deterministic Validation      Ground-Truth Evaluation
+              │                         │
+              ▼                         ▼
+       Business consistency       Extraction fidelity
+              └────────────┬────────────┘
+                           ▼
+                    Human Review
+```
+
+No individual layer is sufficient on its own.
+
+---
+
+## Capabilities
+
+**Structured extraction** — tool-use based schema-forced output, exact
+transcription instructions, explicit `missingFields`, explicit anomaly
+reporting with confidence levels, and independently testable text and vision
+paths.
+
+**Deterministic validation** — two-level reconciliation (employees → location
+subtotal → grand total), RFC / NSS / period format checks, duplicate NSS
+detection, range and sanity checks, low-confidence inference escalation, and
+malformed-extraction detection.
+
+**Evaluation** — human-written ground truth, field-level accuracy,
+path-addressed mismatch reporting, detection of missing or invented rows,
+tolerance-based numeric comparison, documented text normalization, and disk
+caching so iterating on comparison logic does not re-spend API calls.
+
+---
+
+## Project structure
+
+```text
+docucomply-ai/
+├── fixtures/
+│   ├── expected/          Human-created ground truth
+│   ├── pdf/               Generated PDF test documents
+│   └── sample-*.txt
+├── src/
+│   ├── tools/
+│   │   ├── make-pdfs.ts
+│   │   ├── run-vision.ts
+│   │   └── show-text.ts
+│   ├── compare.ts
+│   ├── eval.ts
+│   ├── extract.ts
+│   ├── flatten.ts
+│   ├── pdf-image.ts
+│   ├── pdf-text.ts
+│   ├── run.ts
+│   ├── schema.ts
+│   ├── types.ts
+│   └── validate.ts
+├── .env.example
+├── WORKLOG.md
+├── package.json
+└── tsconfig.json
+```
+
+`WORKLOG.md` is a daily engineering log. Each entry records a specific finding
+and how it changed the next day's design decision.
+
+---
+
+## Getting started
+
+Requires Node.js, npm and an Anthropic API key.
+
+```bash
+git clone https://github.com/NeyhdaNavarro/docucomply-ai.git
+cd docucomply-ai
+npm install
+cp .env.example .env      # add your ANTHROPIC_API_KEY
+```
+
+```bash
+npm run extract -- fixtures/sample-01.txt        # extract and validate
+npm run eval                                     # field-level evaluation
+npm run make-pdfs                                # generate PDF fixtures
+npm run show-text -- fixtures/pdf/sample-03.pdf  # inspect a PDF text layer
+npm run vision -- fixtures/pdf/sample-03.pdf 2   # vision route, optional scale
+```
+
+---
+
+## Known limitations
+
+**Validation cannot detect a faithful-looking wrong extraction.** The validator
+only catches internal inconsistency. If the model misreads a figure and the
+arithmetic still reconciles, validation passes silently. The source document is
+never part of the comparison, so this blind spot is structural rather than a
+bug — and it is the reason ground-truth measurement exists in this project.
+
+**Monetary values use floating point with tolerance.** TypeScript handles
+decimal numbers, but its `number` type is IEEE 754 double-precision. Unlike C#,
+it has no native `decimal` type for exact-precision amounts, so representation
+artifacts appear — `0.1 + 0.2` evaluates to `0.30000000000000004`. Comparisons
+use a `0.01` tolerance so that a difference caused purely by floating point
+does not surface as a validation error. A production financial system should
+avoid floating point for monetary arithmetic entirely, either representing
+amounts as integer cents or using an exact decimal arithmetic library.
+
+**Anomaly reporting reflects the model's threshold, not mine.** On the
+malformed fixture the model reported a split row and a stray identifier in the
+subtotal line, but did not flag two run-together amounts it also had to
+separate.
+
+This is an experimental portfolio project. It is **not intended for production
+payroll, tax, legal or regulatory decisions.** Results come from a small
+controlled fixture set and are meant to evaluate architecture and failure modes
+rather than establish production accuracy.
+
+---
+
+## Next steps
+
+- Expand the ground-truth dataset
+- Automate regression evaluation across model versions
+- Add deterministic unit tests
+- Test degraded real-world scans and additional layouts
+- Formalize runtime schema validation
+- Add a human-in-the-loop review workflow
+- Measure cost and latency by extraction route
+
+---
+
+## Author
+
+**Neyhda Denisse García Navarro** — Senior Full-Stack Engineer
+
+C#/.NET · TypeScript · SQL Server · Document Automation · Data Validation ·
+Applied AI
+
+Eleven years building production systems, most recently document-processing
+automation for payroll compliance. DocuComply AI combines that background with
+an exploration of measurable, reliable AI-assisted workflows.
