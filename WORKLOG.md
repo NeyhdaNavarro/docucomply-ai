@@ -121,7 +121,7 @@
   did not take effect. Re-test resolution properly.
 - Test Sonnet on the vision path; Haiku may simply be the wrong tier for images.
 
-## Day 8 — Aug 28
+## Day 8 — Aug 27
 
 **Done**
 - Made `renderPdfToImages` take `scale` as a parameter instead of hardcoding
