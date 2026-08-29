@@ -1,7 +1,9 @@
-import { extractTextFromPdf } from '../pdf-text.js';
+import { readFileSync } from 'node:fs';
+import { extractTextFromPdf } from '../pdf-text';
 
 const path = process.argv[2] ?? 'fixtures/pdf/sample-03.pdf';
-const text = await extractTextFromPdf(path);
+const data = new Uint8Array(readFileSync(path));
+const text = await extractTextFromPdf(data);
 
 console.log('--- extracted text ---');
 console.log(text);

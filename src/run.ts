@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { readFileSync } from 'node:fs';
-import { extractPayroll } from './extract.js';
-import { validate } from './validate.js';
+import { extractPayroll } from './extract';
+import { validate } from './validate';
 
 const fixture = process.argv[2] ?? 'fixtures/sample-01.txt';
 const text = readFileSync(fixture, 'utf-8');

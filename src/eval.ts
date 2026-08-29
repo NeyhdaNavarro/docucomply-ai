@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { extractPayroll } from './extract.js';
-import { compare } from './compare.js';
-import type { PayrollDocument } from './types.js';
+import { extractPayroll } from './extract';
+import { compare } from './compare';
+import type { PayrollDocument } from './types';
 
 const FIXTURES = 'fixtures';
 const EXPECTED = 'fixtures/expected';

@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { renderPdfToImages } from '../pdf-image.js';
-import { extractPayrollFromImages } from '../extract.js';
-import { validate } from '../validate.js';
+import { renderPdfToImages } from '../pdf-image';
+import { extractPayrollFromImages } from '../extract';
+import { validate } from '../validate';
 
 const path = process.argv[2] ?? 'fixtures/pdf/sample-03.pdf';
 const scale = Number(process.argv[3] ?? 2);

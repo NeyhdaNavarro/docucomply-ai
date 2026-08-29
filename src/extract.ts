@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 //import { readFileSync } from 'node:fs';
-import { payrollTool } from './schema.js';
-import type { PayrollDocument } from './types.js';
+import { payrollTool } from './schema';
+import type { PayrollDocument } from './types';
 
 const client = new Anthropic();
 

@@ -161,3 +161,4 @@
 **Open**
 - Route A remains the default recommendation: same accuracy, far fewer
   tokens, no per-tier model dependency to re-validate later.
+  

@@ -2,7 +2,7 @@ import type {
   PayrollDocument,
   ValidationFinding,
   ValidationResult,
-} from './types.js';
+} from './types';
 
 
 /** RFC for companies: 3 letters, 6 digits (YYMMDD), 3 alphanumeric. */

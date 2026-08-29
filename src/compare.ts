@@ -1,5 +1,5 @@
-import type { PayrollDocument } from './types.js';
-import { flatten } from './flatten.js';
+import type { PayrollDocument } from './types';
+import { flatten } from './flatten';
 
 /** Monetary tolerance, consistent with the validation engine. */
 const TOLERANCE = 0.01;

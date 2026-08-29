@@ -3,11 +3,9 @@
  * Equivalent to a PdfPig-based pipeline. Fast and cheap, but all spatial
  * information — column positions, row alignment — is lost in the conversion.
  */
-import { readFileSync } from 'node:fs';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
-export async function extractTextFromPdf(path: string): Promise<string> {
-  const data = new Uint8Array(readFileSync(path));
+export async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const pdf = await getDocument({ data }).promise;
 
   const pages: string[] = [];

@@ -1,4 +1,4 @@
-import type { PayrollDocument } from './types.js';
+import type { PayrollDocument } from './types';
 
 /** A single comparable value, addressed by its path in the document. */
 export type FlatField = { path: string; value: string | number };
