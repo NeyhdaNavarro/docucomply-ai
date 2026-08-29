@@ -162,3 +162,27 @@
 - Route A remains the default recommendation: same accuracy, far fewer
   tokens, no per-tier model dependency to re-validate later.
   
+  ## Day 9 — Aug 28
+
+**Attempted:** minimal Next.js interface for Vercel deployment. Not shipped.
+
+**What happened**
+Planning was thorough — the agent traced dependencies down to the installed native binaries and correctly identified that `pdf-text.ts` was the only file in the reused path touching disk.
+
+Implementation exposed two bundler compatibility issues:
+
+1. Turbopack does not map `.js` import specifiers to sibling `.ts` files the way `tsx` does. The first failure appeared in the new route handler, then surfaced again inside the existing shared modules. Fixed by moving to extensionless specifiers across `src/`, which is also the correct convention for `moduleResolution: "bundler"`.
+2. `pdfjs-dist` resolves its own worker by relative path at runtime. Turbopack bundles `pdf.mjs` into a chunk directory where `pdf.worker.mjs` was never copied, so the dynamic import fails.
+
+**Decision**
+Stopped at the worker failure rather than chasing bundler configuration. The project's value is in measured extraction accuracy, deterministic validation, and the route comparison — none of which a UI adds to.
+
+A working repo beats a half-working demo.
+
+**Kept from the attempt**
+
+* Extensionless import specifiers — correct for the declared resolution mode.
+* `extractTextFromPdf` now takes bytes instead of a path. The read is decoupled from the parse, which is better design regardless of deployment.
+* `rootDir` / `outDir` removed from `tsconfig.json` — both were vestigial because the project does not compile with `tsc`.
+
+**Note for later:** the likely Route A fix is marking `pdfjs-dist` as an external server package so it loads from `node_modules` rather than being bundled. Untested.
